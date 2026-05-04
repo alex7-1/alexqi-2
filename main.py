@@ -20,18 +20,7 @@ app.add_middleware(
 )
 
 client = anthropic.Anthropic(api_key=os.environ.get("ANTHROPIC_API_KEY"))
-
-
-def resolve_model() -> str:
-    configured = os.environ.get("ANTHROPIC_MODEL", "claude-sonnet-4-6").strip()
-    legacy_models = {
-        "claude-sonnet-4-20250514": "claude-sonnet-4-6",
-        "claude-3-7-sonnet-20250219": "claude-sonnet-4-6",
-    }
-    return legacy_models.get(configured, configured)
-
-
-MODEL = resolve_model()
+MODEL = "claude-sonnet-4-6"
 
 PROMPT = """你是 Alex Qi 报价卡的数据录入助手。请从德国电力/燃气合同系统截图中提取字段，只返回 JSON，不要 Markdown，不要解释。
 
