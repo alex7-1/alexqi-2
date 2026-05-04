@@ -547,6 +547,12 @@
         font-size: 11px !important;
         line-height: 1.45;
       }
+      .adjust-save-status {
+        margin-top: -4px;
+        color: #3d5a45;
+        font-size: 11px;
+        line-height: 1.4;
+      }
       .eprimo-static {
         position: absolute;
         inset: 0;
@@ -615,6 +621,7 @@
           <button class="small-btn" id="copyEprimoConfigBtn" type="button">复制当前配置</button>
           <button class="small-btn" id="resetEprimoConfigBtn" type="button">重置坐标</button>
         </div>
+        <div class="adjust-save-status" id="eprimoSaveStatus">坐标会自动记住在本浏览器</div>
         <textarea class="adjust-output" id="eprimoConfigOutput" readonly></textarea>
       </div>
       <div class="section-hint">业务类型</div>
@@ -800,6 +807,7 @@
 
     <script>
       const BACKEND_URL = "https://alexqi-2-production.up.railway.app";
+      const EPRIMO_CONFIG_STORAGE_KEY = "alex-eprimo-coordinate-config";
       const defaultEprimoConfig = [
         { id: "plz", top: 17.3, left: 12.3, fontSize: 14, fontWeight: 600, color: "#1a3020", letterSpacing: 0, lineHeight: 1.2 },
         { id: "kwh", top: 19.8, left: 16.3, fontSize: 14, fontWeight: 600, color: "#1a3020", letterSpacing: 0, lineHeight: 1.2 },
@@ -892,6 +900,7 @@
         renderPackageTable();
         fillNetworkPackage();
         updateAll();
+        showEprimoSaveStatus(localStorage.getItem(EPRIMO_CONFIG_STORAGE_KEY) ? "已加载上次保存的坐标和字号" : "坐标会自动记住在本浏览器");
       }
 
       function bindEvents() {
@@ -1087,7 +1096,7 @@
         item.fontSize = numeric($("#eprimoFontSizeInput").value);
         item.fontWeight = numeric($("#eprimoFontWeightInput").value);
         normalizeEprimoItem(item);
-        saveEprimoConfig();
+        saveEprimoConfig("已自动记住坐标和字号");
         renderEprimoOverlay();
       }
 
@@ -1126,6 +1135,7 @@
 
       function stopEprimoDrag() {
         document.removeEventListener("pointermove", moveEprimoDrag);
+        if (eprimoDrag) saveEprimoConfig("已自动记住拖拽位置");
         eprimoDrag = null;
       }
 
@@ -1142,7 +1152,7 @@
         if (event.key === "ArrowLeft") item.left -= step;
         if (event.key === "ArrowRight") item.left += step;
         normalizeEprimoItem(item);
-        saveEprimoConfig();
+        saveEprimoConfig("已自动记住微调位置");
         renderEprimoOverlay();
       }
 
@@ -1201,20 +1211,26 @@
 
       function resetEprimoConfig() {
         eprimoConfig = cloneEprimoDefaults();
-        saveEprimoConfig();
+        saveEprimoConfig("已恢复默认坐标");
         renderEprimoAdjustOptions();
         renderEprimoOverlay();
       }
 
-      function saveEprimoConfig() {
-        localStorage.setItem("alex-eprimo-coordinate-config", JSON.stringify(eprimoConfig));
+      function saveEprimoConfig(message = "已自动记住本次坐标") {
+        localStorage.setItem(EPRIMO_CONFIG_STORAGE_KEY, JSON.stringify(eprimoConfig));
         $("#eprimoConfigOutput").value = exportEprimoConfig();
+        showEprimoSaveStatus(`${message} · 下次截图会沿用`);
+      }
+
+      function showEprimoSaveStatus(message) {
+        const status = $("#eprimoSaveStatus");
+        if (status) status.textContent = message;
       }
 
       function loadEprimoConfig() {
         const defaults = cloneEprimoDefaults();
         try {
-          const saved = JSON.parse(localStorage.getItem("alex-eprimo-coordinate-config") || "[]");
+          const saved = JSON.parse(localStorage.getItem(EPRIMO_CONFIG_STORAGE_KEY) || "[]");
           if (!Array.isArray(saved)) return defaults;
           return defaults.map((item) => ({ ...item, ...(saved.find((savedItem) => savedItem.id === item.id) || {}) }));
         } catch (error) {
