@@ -885,6 +885,21 @@
         return Number.isInteger(num) ? String(num) : num.toFixed(2);
       };
       const durationNum = (value) => numeric(value) || 12;
+      const monthUnit = (value) => {
+        const raw = String(value ?? "").trim();
+        if (!raw) return "";
+        if (/个?\s*月|monate?|months?/i.test(raw)) {
+          const normalized = normalizeNumberText(raw);
+          return normalized ? `${Number.parseFloat(normalized)}个月` : raw;
+        }
+        const normalized = normalizeNumberText(raw);
+        return normalized ? `${Number.parseFloat(normalized)}个月` : raw;
+      };
+      const displayValue = (field, value) => {
+        if (field.includes("supplier")) return value.toUpperCase();
+        if (["duration", "guarantee", "net_duration"].includes(field)) return monthUnit(value);
+        return value;
+      };
       const monthAvg = () => Math.max(0, numeric(get("monthly")) - (hasBonus ? numeric(get("bonus")) / durationNum(get("duration")) : 0));
 
       init();
@@ -944,7 +959,7 @@
           const fields = el.dataset.bind.split(/\s+/);
           const field = fields.find((item) => currentBusiness === "network" ? item.startsWith("net_") : !item.startsWith("net_")) || fields[0];
           const value = get(field);
-          el.textContent = field.includes("supplier") ? value.toUpperCase() : value;
+          el.textContent = displayValue(field, value);
         });
         $("#displayMonthly").textContent = hasBonus ? money(monthAvg()) : get("monthly");
         $("#avgMonthlyNote").style.display = hasBonus && currentBusiness === "energy" ? "" : "none";
